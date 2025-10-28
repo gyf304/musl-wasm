@@ -1,0 +1,51 @@
+#!/bin/sh
+cc="@CC@"
+libc="@PREFIX@"
+libc_inc="@INCDIR@"
+libc_lib="@LIBDIR@"
+thisdir="`cd "$(dirname "$0")"; pwd`"
+
+# prevent clang from running the linker (and erroring) on no input.
+sflags=
+eflags=
+shared=
+for x ; do
+    case "$x" in
+        -shared) shared=1 ;;
+        --shared) shared=1 ;;
+        -l*) input=1 ;;
+        *) input= ;;
+    esac
+    if test "$input" ; then
+        sflags="-l-user-start"
+        eflags="-l-user-end"
+        break
+    fi
+done
+if test "$shared" ; then
+    sflags="$sflags -Wl,--export-all,--unresolved-symbols=import-dynamic"
+else
+    sflags="$sflags -Wl,--export=_start,--export=__stack_pointer"
+fi
+
+exec $cc \
+    -B"$thisdir" \
+    -fuse-ld=lld \
+    -static-libgcc \
+    -fPIC \
+    -mexception-handling \
+    -matomics \
+    -mllvm -wasm-enable-sjlj \
+    -mllvm -wasm-use-legacy-eh=false \
+    -nostdinc \
+    --sysroot "$libc" \
+    -isystem "$libc_inc" \
+    --include=bits/__main.h \
+    -Wl,--shared-memory,--no-entry,--extra-features=mutable-globals,--max-memory=2147483648 \
+    -L-user-start \
+    $sflags \
+    "$@" \
+    $eflags \
+    -L"$libc_lib" \
+    -L-user-end \
+    -Wno-unused-command-line-argument

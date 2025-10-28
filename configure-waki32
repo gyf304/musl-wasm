@@ -1,0 +1,12 @@
+#!/bin/sh
+
+./configure \
+	--with-malloc=oldmalloc \
+	--enable-wrapper=clang \
+	CC='clang --target=wasm32 -fPIC -fuse-ld=lld' \
+	CFLAGS='-mexception-handling -matomics -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=false -DMMAP_THRESHOLD=-1 -DMMALLOC_DISABLE_MMAP' \
+	LDFLAGS='-Wl,--no-entry -Wl,--shared-memory -Wl,--extra-features=mutable-globals -Wl,--export-all -Wl,--unresolved-symbols=import-dynamic' \
+	AR='llvm-ar' \
+	RANLIB='llvm-ranlib' \
+	"$@" \
+	wasm32
