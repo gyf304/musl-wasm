@@ -1,0 +1,10 @@
+#!/bin/sh
+
+./configure --prefix=./sysroot \
+	CC='clang --target=wasm32 -fuse-ld=lld -Wl,--no-entry' \
+	CFLAGS='-mexception-handling -matomics -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=false' \
+	LDFLAGS='-Wl,--shared-memory -Wl,--extra-features=mutable-globals -Wl,--export-all -Wl,--unresolved-symbols=import-dynamic' \
+	AR='llvm-ar' \
+	RANLIB='llvm-ranlib' \
+	$@ \
+	wasm32

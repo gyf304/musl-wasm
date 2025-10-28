@@ -86,6 +86,10 @@ all:
 
 else
 
+ifeq ($(findstring wasm,$(ARCH)),wasm)
+CRT_OBJS := $(filter-out obj/crt/rcrt1.o,$(CRT_OBJS))
+endif
+
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
 OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
@@ -158,9 +162,15 @@ obj/%.lo: $(srcdir)/%.S
 obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH)
 	$(CC_CMD)
 
+ifeq ($(findstring wasm,$(ARCH)),wasm)
+lib/libc.so: $(LOBJS)
+	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \
+	-o $@ $(LOBJS) $(LIBCC)
+else
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \
 	-Wl,-e,_dlstart -o $@ $(LOBJS) $(LDSO_OBJS) $(LIBCC)
+endif
 
 lib/libc.a: $(AOBJS)
 	rm -f $@
